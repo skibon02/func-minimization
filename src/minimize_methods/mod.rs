@@ -7,7 +7,7 @@ pub trait MinimizableFunc {
     fn calc(&self, x:f64, y: f64) -> f64;
 }
 pub trait MinimizeMethod {
-    fn step(&mut self, coord: (f64, f64), deriv: (f64, f64)) -> (f64, f64);
+    fn step(&mut self, coord: (f64, f64), f: &mut dyn FnMut(f64, f64) -> f64, deriv: &mut dyn FnMut(f64, f64) -> (f64, f64)) -> (f64, f64);
 }
 
 pub struct MinimizeWorker<'a, T: MinimizableFunc> {
@@ -20,13 +20,11 @@ pub struct MinimizeWorker<'a, T: MinimizableFunc> {
 
 #[derive(Debug)]
 pub struct StepData {
-    x: f64,
-    y: f64,
-    dx: f64,
-    dy: f64,
     new_x: f64,
     new_y: f64,
-    f: f64
+    f: f64,
+    calc_metric: u64,
+    deriv_metric: u64
 }
 
 impl<'a, T: MinimizableFunc> MinimizeWorker<'a, T> {
@@ -45,22 +43,26 @@ impl<'a, T: MinimizableFunc> MinimizeWorker<'a, T> {
         }
 
         let (x,y) = (self.x, self.y);
-        let (dx, dy) = self.func.deriv(self.x, self.y);
-
         
-
-        
+        let mut calc_metric = 0;
+        let mut deriv_metric = 0;
         //const step
-        (self.x, self.y) = self.method.step((x,y),(dx,dy));
+        (self.x, self.y) = self.method.step((x,y), &mut |x, y| {
+            calc_metric += 1;
+            self.func.calc(x,y)
+        }, &mut |x, y| {
+            deriv_metric += 1;
+            self.func.deriv(x,y) 
+        });
 
         let (new_x, new_y) = (self.x, self.y);
         let val = self.func.calc(new_x, new_y);
 
         let step_data = StepData {
-            x, y,
-            dx, dy,
             new_x, new_y,
-            f: val
+            f: val,
+            calc_metric,
+            deriv_metric
         };
 
 

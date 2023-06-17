@@ -15,8 +15,8 @@ impl DecStep {
 }
 
 impl MinimizeMethod for DecStep {
-
-    fn step(&mut self, coord: (f64, f64), deriv: (f64, f64)) -> (f64, f64) {
+    fn step(&mut self, coord: (f64, f64), f: &mut dyn FnMut(f64, f64) -> f64, deriv: &mut dyn FnMut(f64, f64) -> (f64, f64)) -> (f64, f64) {
+        let deriv = deriv(coord.0, coord.1);
         let step = self.step / self.step_num as f64;
         let res = (coord.0 - deriv.0 * step, coord.1 - deriv.1 * step);
         self.step_num += 1;
