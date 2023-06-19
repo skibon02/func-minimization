@@ -1,6 +1,7 @@
 pub mod const_step;
 pub mod dec_step;
 pub mod split_step;
+pub mod steepest_descend;
 
 pub trait MinimizableFunc {
     fn deriv(&self, x: f64, y: f64) -> (f64, f64);
@@ -20,11 +21,11 @@ pub struct MinimizeWorker<'a, T: MinimizableFunc> {
 
 #[derive(Debug)]
 pub struct StepData {
-    new_x: f64,
-    new_y: f64,
-    f: f64,
-    calc_metric: u64,
-    deriv_metric: u64
+    pub new_x: f64,
+    pub new_y: f64,
+    pub f: f64,
+    pub calc_metric: u64,
+    pub deriv_metric: u64
 }
 
 impl<'a, T: MinimizableFunc> MinimizeWorker<'a, T> {
