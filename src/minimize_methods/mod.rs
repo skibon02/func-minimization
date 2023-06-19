@@ -12,7 +12,7 @@ pub trait MinimizeMethod {
 }
 
 pub struct MinimizeWorker<'a, T: MinimizableFunc> {
-    func: T,
+    func: &'a T,
     x: f64,
     y: f64,
     cnt: usize,
@@ -29,7 +29,7 @@ pub struct StepData {
 }
 
 impl<'a, T: MinimizableFunc> MinimizeWorker<'a, T> {
-    pub fn new(f: T, method: &'a mut dyn MinimizeMethod) -> MinimizeWorker<'a, T> {
+    pub fn new(f: &'a T, method: &'a mut dyn MinimizeMethod) -> MinimizeWorker<'a, T> {
         MinimizeWorker { func: f, x: 0.0, y: 0.0, cnt: 10, method }
     }
     pub fn with_start_point(self, x0: f64, y0: f64) -> MinimizeWorker<'a, T> {
