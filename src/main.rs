@@ -63,12 +63,30 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, stdout: &mu
     let mut total_deriv_calls = 0;
     
     let mut spec = ColorSpec::new();
-    stdout.fg(&mut spec, Green);
 
+    let mut counter = 0;
     while let Some(info) = worker.run_step() {
-        writeln!(stdout, "Находимся в точке {:.4}, {:.4}. \t\tЗначение функции: {:.6}", info.new_x, info.new_y, info.f);
+        stdout.intense(&mut spec, true);
+        stdout.fg(&mut spec, Color::Red);
+        print!("{}. ", counter);
+        stdout.intense(&mut spec, false);
+
+        stdout.fg(&mut spec, Blue);
+        print!("Находимся в точке:");
+        stdout.fg(&mut spec, Green);
+        print!("   {:.4}, {:.4}", info.new_x, info.new_y);
+        stdout.fg(&mut spec, Blue);
+        print!("\t\tЗначение функции:");
+        stdout.fg(&mut spec, Green);
+        print!("   {:.6}", info.f);
+        stdout.fg(&mut spec, Blue);
+        print!("\t\tВычислений производной:");
+        stdout.fg(&mut spec, Green);
+        print!("   {}", info.deriv_metric);
+        println!();
         total_f_calls += info.calc_metric;
         total_deriv_calls += info.deriv_metric;
+        counter += 1;
     }
     println!();
 
@@ -123,19 +141,27 @@ fn print_params(stdout: &mut StandardStream, params: &Params) {
         vec![
             Row::new(vec![
                 TableCell::new("1. Коеффициент А:"),
-                TableCell::new("2. Начальное значение X1: "),
-                TableCell::new("3. Начальное значение X2: "),
-                TableCell::new("4. Начальная длина шага: "),
-                TableCell::new("5. Алгоритм минимизации: "),
-                TableCell::new("6. Печатать каждые _ шагов: "),
+                TableCell::new(params.a),
             ]),
             Row::new(vec![
-                TableCell::new(params.a),
+                TableCell::new("2. Начальное значение X1: "),
                 TableCell::new(params.x1_0),
+            ]),
+            Row::new(vec![
+                TableCell::new("3. Начальное значение X2: "),
                 TableCell::new(params.x2_0),
+            ]),
+            Row::new(vec![
+                TableCell::new("4. Начальная длина шага: "),
                 TableCell::new(params.initial_step),
-                TableCell::new(params.method.desc()),
-                TableCell::new(params.print_every),
+            ]),
+            Row::new(vec![
+                 TableCell::new("5. Алгоритм минимизации: "),
+                 TableCell::new(params.method.desc()),
+            ]),
+            Row::new(vec![
+                 TableCell::new("6. Печатать каждые _ шагов: "),
+                 TableCell::new(params.print_every),
             ])
         ]
     ).build();
