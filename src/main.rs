@@ -7,7 +7,7 @@ use minimize_methods::*;
 use term_table::row::Row;
 use term_table::table_cell::{TableCell, Alignment};
 
-use std::io::Write;
+use std::io::{Write, stdin};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use term_table::{self, TableBuilder, TableStyle};
@@ -66,7 +66,7 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, stdout: &mu
     stdout.fg(&mut spec, Green);
 
     while let Some(info) = worker.run_step() {
-        writeln!(stdout, "Находимся в точке {:.4}, {:.4}. Значение функции: {:.6}", info.new_x, info.new_y, info.f);
+        writeln!(stdout, "Находимся в точке {:.4}, {:.4}. \t\tЗначение функции: {:.6}", info.new_x, info.new_y, info.f);
         total_f_calls += info.calc_metric;
         total_deriv_calls += info.deriv_metric;
     }
@@ -174,6 +174,7 @@ fn main() {
     clear_screen();
     
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let mut algo: Box<dyn MinimizeMethod>;
 
     let mut params = Params {
         a: 0.1,
@@ -183,26 +184,113 @@ fn main() {
         print_every: 1,
         initial_step: 0.01,
     };
+    let mut buffer = String::new();
 
 
     print_title(&mut stdout);
+    while true {
+        let mut buffer = String::new();
+        print_params(&mut stdout, &params);
 
-    print_params(&mut stdout, &params);
+        let mut spec = ColorSpec::new();
+        stdout.clear(&mut spec);
 
-    let mut spec = ColorSpec::new();
-    stdout.clear(&mut spec);
+        println!("Введите номер параметра, который хотите изменить, или нажмите Enter для запуска алгоритма...");
+        println!();
 
-    println!("Введите номер параметра, который хотите изменить, или нажмите Enter для запуска алгоритма...");
-    println!();
+        buffer.clear();
+        stdin().read_line(&mut buffer).unwrap();
+        if buffer.trim().len() == 0 {
+            let mut f = F(params.a);
+        
+            algo = match params.method {
+                MethodEnum::ConstStep => Box::new(const_step::ConstStep::new(params.initial_step)),
+                MethodEnum::DecStep => Box::new(dec_step::DecStep::new(params.initial_step)),
+                MethodEnum::SplitStep => Box::new(split_step::SplitStep::new(params.initial_step)),
+                MethodEnum::SteepestDescend => Box::new(steepest_descend::SteepestDescend::new()),
+                _ => todo!()
+            };
+
+            println!("Введите количество шагов");
+            buffer.clear();
+            stdin().read_line(&mut buffer).unwrap();
+
+            let steps = match buffer.trim().parse::<u32>() {
+                Ok(v) => {
+                    v
+                },
+                Err(_) => {
+                    continue;
+                }
+            };
+            
+            run(&f, &mut algo, &mut stdout, params.x1_0, params.x2_0, steps as u64);
+        }
+        else {
+
+            match buffer.trim().parse::<u32>() {
+                Ok(v) => {
+                    buffer.clear();
+                    match v {
+                        1 => {
+                            println!("Введите новое значение коэффициента");
+                            stdin().read_line(&mut buffer).unwrap();
+                            let v = buffer.trim().parse::<f64>().unwrap();
+                            params.a = v;
+                        },
+                        2 => {
+                            println!("Введите новое начальное значение Х1");
+                            stdin().read_line(&mut buffer).unwrap();
+                            let v = buffer.trim().parse::<f64>().unwrap();
+                            params.x1_0 = v;
+                        },
+                        3 => {
+                            println!("Введите новое начальное значение Х2");
+                            stdin().read_line(&mut buffer).unwrap();
+                            let v = buffer.trim().parse::<f64>().unwrap();
+                            params.x2_0 = v;
+                        },
+                        4 => {
+                            println!("Введите новую начальную длину шага");
+                            stdin().read_line(&mut buffer).unwrap();
+                            let v = buffer.trim().parse::<f64>().unwrap();
+                            params.initial_step = v;
+                        },
+                        5 => {
+                            println!("Выберите алгоритм минимизации:");
+                            println!("1. {}", MethodEnum::ConstStep.desc());
+                            println!("2. {}", MethodEnum::DecStep.desc());
+                            println!("3. {}", MethodEnum::SplitStep.desc());
+                            println!("4. {}", MethodEnum::SteepestDescend.desc());
+                            stdin().read_line(&mut buffer).unwrap();
+                            params.method = match buffer.trim().parse::<u32>().unwrap() {
+                                1 => MethodEnum::ConstStep,
+                                2 => MethodEnum::DecStep,
+                                3 => MethodEnum::SplitStep,
+                                4 => MethodEnum::SteepestDescend,
+                                _ => todo!()
+                            };
+                        },
+                        6 => {
+                            println!("Печать каждые _ шагов:");
+                            stdin().read_line(&mut buffer).unwrap();
+                            let v = buffer.trim().parse::<u64>().unwrap();
+                            params.print_every = v;
+                        },
+                        _ => {
+                            continue;
+                        }
+
+                    }
+                },
+                Err(_) => {
+                    continue;
+                }
+            }
+        }
+
+    }
 
 
 
-    let mut f = F(0.1);
-    let mut start_x = 0.11;
-    let mut start_y = 0.003;
-    let mut steps = 10;
-    let mut algo: Box<dyn MinimizeMethod>;
-
-    algo = Box::new(split_step::SplitStep::new(0.1));
-    run(&f, &mut algo, &mut stdout, start_x, start_y, steps);
 }
