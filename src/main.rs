@@ -246,7 +246,7 @@ fn main() {
                 MethodEnum::ConstStep => Box::new(const_step::ConstStep::new(params.initial_step)),
                 MethodEnum::DecStep => Box::new(dec_step::DecStep::new(params.initial_step)),
                 MethodEnum::SplitStep => Box::new(split_step::SplitStep::new(params.initial_step)),
-                MethodEnum::SteepestDescend => Box::new(steepest_descend::SteepestDescend::new()),
+                MethodEnum::SteepestDescend => Box::new(steepest_descend::SteepestDescend::new(params.initial_step)),
                 _ => todo!()
             };
 
