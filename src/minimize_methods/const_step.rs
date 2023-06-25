@@ -15,7 +15,7 @@ impl ConstStep {
 
 impl MinimizeMethod for ConstStep {
 
-    fn step(&mut self, coord: (f64, f64), f: &mut dyn FnMut(f64, f64) -> f64, deriv: &mut dyn FnMut(f64, f64) -> (f64, f64)) -> (f64, f64) {
+    fn step(&mut self, coord: (f64, f64), _f: &mut dyn FnMut(f64, f64) -> f64, deriv: &mut dyn FnMut(f64, f64) -> (f64, f64)) -> (f64, f64) {
         let deriv = deriv(coord.0, coord.1);
         (coord.0 - deriv.0 * self.step, coord.1 - deriv.1 * self.step)
     }

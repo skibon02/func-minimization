@@ -7,12 +7,12 @@ use minimize_methods::*;
 use term_table::row::Row;
 use term_table::table_cell::{TableCell, Alignment};
 
-use std::io::{Write, stdin};
+use std::io::stdin;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use term_table::{self, TableBuilder, TableStyle};
 
-use Color::{Green, Red, Rgb, Yellow, Black, Blue, Ansi256, Cyan, Magenta, White};
+use Color::{Green, Red, Blue};
 
 use crate::minimize_methods::MinimizeMethod;
 
@@ -42,13 +42,13 @@ trait FastColors {
 
 impl FastColors for StandardStream {
     fn bg(&mut self, spec: &mut ColorSpec, col: Color) {
-        self.set_color(spec.set_bg(Some(col))).unwrap();
+        self.set_color(spec.set_bg(Some(col)));
     }
     fn fg(&mut self, spec: &mut ColorSpec, col: Color) {
-        self.set_color(spec.set_fg(Some(col))).unwrap();
+        self.set_color(spec.set_fg(Some(col)));
     }
     fn intense(&mut self, spec: &mut ColorSpec, intense: bool) {
-        self.set_color(spec.set_intense(intense)).unwrap();
+        self.set_color(spec.set_intense(intense));
     }
     fn clear(&mut self, spec: &mut ColorSpec) {
         spec.set_fg(None);
@@ -57,7 +57,7 @@ impl FastColors for StandardStream {
     }
 }
 
-fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, stdout: &mut StandardStream, start_x: f64, start_y: f64, steps: u64) {
+fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, stdout: &mut StandardStream, start_x: f64, start_y: f64, steps: u64, print_every: u64) {
     let mut worker = MinimizeWorker::new(f, algo.as_mut()).with_cnt(steps as usize).with_start_point(start_x, start_y);
     let mut total_f_calls = 0;
     let mut total_deriv_calls = 0;
@@ -66,6 +66,15 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, stdout: &mu
 
     let mut counter = 0;
     while let Some(info) = worker.run_step() {
+        total_f_calls += info.calc_metric;
+        total_deriv_calls += info.deriv_metric;
+
+        if counter % print_every != 0 {
+            counter += 1;
+            continue;
+        }
+
+
         stdout.intense(&mut spec, true);
         stdout.fg(&mut spec, Color::Red);
         print!("{}. ", counter);
@@ -80,12 +89,11 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, stdout: &mu
         stdout.fg(&mut spec, Green);
         print!("   {:.6}", info.f);
         stdout.fg(&mut spec, Blue);
-        print!("\t\tВычислений производной:");
+        print!("\t\tВычислений функции:");
         stdout.fg(&mut spec, Green);
-        print!("   {}", info.deriv_metric);
+        print!("   {}", info.calc_metric);
         println!();
-        total_f_calls += info.calc_metric;
-        total_deriv_calls += info.deriv_metric;
+
         counter += 1;
     }
     println!();
@@ -107,6 +115,12 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, stdout: &mu
     print!("{} раз", total_deriv_calls);
 
     stdout.clear(&mut spec);
+    println!();
+    println!("Нажмите Enter чтобы продолжить...");
+    let mut buf = String::new();
+    let _ = stdin().read_line(&mut buf);
+
+    println!();
     println!();
 }
 enum MethodEnum {
@@ -210,12 +224,11 @@ fn main() {
         print_every: 1,
         initial_step: 0.01,
     };
+
     let mut buffer = String::new();
 
-
     print_title(&mut stdout);
-    while true {
-        let mut buffer = String::new();
+    loop {
         print_params(&mut stdout, &params);
 
         let mut spec = ColorSpec::new();
@@ -226,8 +239,8 @@ fn main() {
 
         buffer.clear();
         stdin().read_line(&mut buffer).unwrap();
-        if buffer.trim().len() == 0 {
-            let mut f = F(params.a);
+        if buffer.trim().is_empty() {
+            let f = F(params.a);
         
             algo = match params.method {
                 MethodEnum::ConstStep => Box::new(const_step::ConstStep::new(params.initial_step)),
@@ -246,77 +259,83 @@ fn main() {
                     v
                 },
                 Err(_) => {
+                    stdout.fg(&mut spec, Red);
+                    println!("Ошибка ввода!");
+                    stdout.clear(&mut spec);
                     continue;
                 }
             };
             
-            run(&f, &mut algo, &mut stdout, params.x1_0, params.x2_0, steps as u64);
+            run(&f, &mut algo, &mut stdout, params.x1_0, params.x2_0, steps as u64, params.print_every);
         }
-        else {
-
-            match buffer.trim().parse::<u32>() {
-                Ok(v) => {
-                    buffer.clear();
-                    match v {
-                        1 => {
-                            println!("Введите новое значение коэффициента");
-                            stdin().read_line(&mut buffer).unwrap();
-                            let v = buffer.trim().parse::<f64>().unwrap();
-                            params.a = v;
-                        },
-                        2 => {
-                            println!("Введите новое начальное значение Х1");
-                            stdin().read_line(&mut buffer).unwrap();
-                            let v = buffer.trim().parse::<f64>().unwrap();
-                            params.x1_0 = v;
-                        },
-                        3 => {
-                            println!("Введите новое начальное значение Х2");
-                            stdin().read_line(&mut buffer).unwrap();
-                            let v = buffer.trim().parse::<f64>().unwrap();
-                            params.x2_0 = v;
-                        },
-                        4 => {
-                            println!("Введите новую начальную длину шага");
-                            stdin().read_line(&mut buffer).unwrap();
-                            let v = buffer.trim().parse::<f64>().unwrap();
-                            params.initial_step = v;
-                        },
-                        5 => {
-                            println!("Выберите алгоритм минимизации:");
-                            println!("1. {}", MethodEnum::ConstStep.desc());
-                            println!("2. {}", MethodEnum::DecStep.desc());
-                            println!("3. {}", MethodEnum::SplitStep.desc());
-                            println!("4. {}", MethodEnum::SteepestDescend.desc());
-                            stdin().read_line(&mut buffer).unwrap();
-                            params.method = match buffer.trim().parse::<u32>().unwrap() {
-                                1 => MethodEnum::ConstStep,
-                                2 => MethodEnum::DecStep,
-                                3 => MethodEnum::SplitStep,
-                                4 => MethodEnum::SteepestDescend,
-                                _ => todo!()
-                            };
-                        },
-                        6 => {
-                            println!("Печать каждые _ шагов:");
-                            stdin().read_line(&mut buffer).unwrap();
-                            let v = buffer.trim().parse::<u64>().unwrap();
-                            params.print_every = v;
-                        },
-                        _ => {
-                            continue;
-                        }
-
-                    }
-                },
-                Err(_) => {
-                    continue;
-                }
-            }
+        else if let Err(()) = update_param(buffer.trim().parse::<u32>().map_err(|_| ()), &mut params) {
+            stdout.fg(&mut spec, Red);
+            println!("Ошибка ввода!");
+            stdout.clear(&mut spec);
+            continue;
         }
 
     }
 
 
+
+}
+
+fn update_param(num: Result<u32, ()>, params: &mut Params) -> Result<(), ()> {
+    let mut buffer = String::new();
+    let v = num.map_err(|_| ())?;
+    match v {
+        1 => {
+            println!("Введите новое значение коэффициента");
+            stdin().read_line(&mut buffer).unwrap();
+            let v = buffer.trim().parse::<f64>().map_err(|_| ())?;
+            params.a = v;
+        },
+        2 => {
+            println!("Введите новое начальное значение Х1");
+            stdin().read_line(&mut buffer).unwrap();
+            let v = buffer.trim().parse::<f64>().map_err(|_| ())?;
+            params.x1_0 = v;
+        },
+        3 => {
+            println!("Введите новое начальное значение Х2");
+            stdin().read_line(&mut buffer).unwrap();
+            let v = buffer.trim().parse::<f64>().map_err(|_| ())?;
+            params.x2_0 = v;
+        },
+        4 => {
+            println!("Введите новую начальную длину шага");
+            stdin().read_line(&mut buffer).unwrap();
+            let v = buffer.trim().parse::<f64>().map_err(|_| ())?;
+            params.initial_step = v;
+        },
+        5 => {
+            println!("Выберите алгоритм минимизации:");
+            println!("1. {}", MethodEnum::ConstStep.desc());
+            println!("2. {}", MethodEnum::DecStep.desc());
+            println!("3. {}", MethodEnum::SplitStep.desc());
+            println!("4. {}", MethodEnum::SteepestDescend.desc());
+            stdin().read_line(&mut buffer).unwrap();
+            params.method = match buffer.trim().parse::<u32>().map_err(|_| ())? {
+                1 => MethodEnum::ConstStep,
+                2 => MethodEnum::DecStep,
+                3 => MethodEnum::SplitStep,
+                4 => MethodEnum::SteepestDescend,
+                _ => return Err(())
+                
+            };
+        },
+        6 => {
+            println!("Печать каждые _ шагов:");
+            stdin().read_line(&mut buffer).unwrap();
+            let v = buffer.trim().parse::<u64>().map_err(|_| ())?;
+            params.print_every = v;
+        },
+        _ => {
+            return Err(())
+        }
+
+    }
+    Ok(())
 
 }
