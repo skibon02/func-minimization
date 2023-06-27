@@ -42,18 +42,18 @@ trait FastColors {
 
 impl FastColors for StandardStream {
     fn bg(&mut self, spec: &mut ColorSpec, col: Color) {
-        self.set_color(spec.set_bg(Some(col)));
+        // self.set_color(spec.set_bg(Some(col)));
     }
     fn fg(&mut self, spec: &mut ColorSpec, col: Color) {
-        self.set_color(spec.set_fg(Some(col)));
+        // self.set_color(spec.set_fg(Some(col)));
     }
     fn intense(&mut self, spec: &mut ColorSpec, intense: bool) {
-        self.set_color(spec.set_intense(intense));
+        // self.set_color(spec.set_intense(intense));
     }
     fn clear(&mut self, spec: &mut ColorSpec) {
-        spec.set_fg(None);
-        spec.set_bg(None);
-        self.set_color(&ColorSpec::new());
+        // spec.set_fg(None);
+        // spec.set_bg(None);
+        // self.set_color(&ColorSpec::new());
     }
 }
 
