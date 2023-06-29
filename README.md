@@ -7,5 +7,5 @@
 - Метод наискорейшего спуска
 
 ## Скриншоты
-![image](https://github.com/skibon02/func-minimization/assets/25740003/1cbaaedc-a83c-4461-94b3-05f563e8b4a1)
-![image](https://github.com/skibon02/func-minimization/assets/25740003/f3a8ba2a-f42d-4faa-946d-80fc4c8128e1)
+![image](https://github.com/skibon02/func-minimization/assets/25740003/11ebcb6e-0102-491f-b98d-ea29c8f7757a)
+![image](https://github.com/skibon02/func-minimization/assets/25740003/97f01425-b2ad-4dad-9c9f-59ba4232077b)
