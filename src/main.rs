@@ -81,7 +81,7 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, start_x: f6
             ResetColor
             );
 
-        print!("{}","\t\tf = ".dark_magenta());
+        print!("{}","  \tf = ".dark_magenta());
 
         let _ = execute!(
             stdout(),
@@ -161,7 +161,14 @@ struct Params {
     initial_step: f64,
 }
 fn clear_screen() {
-    print!("{}[2J", 27 as char);
+    let _ = execute!(
+        stdout(),
+        SetForegroundColor(Color::Black),
+        SetBackgroundColor(Color::Black),
+        ResetColor,
+        );
+    let _ = execute!(stdout(), crossterm::terminal::Clear(crossterm::terminal::ClearType::All));
+    let _ = execute!(stdout(), crossterm::cursor::MoveTo(0,0));
 }
 fn print_params(params: &Params) {
     let _ = execute!(
