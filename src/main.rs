@@ -42,18 +42,18 @@ trait FastColors {
 
 impl FastColors for StandardStream {
     fn bg(&mut self, spec: &mut ColorSpec, col: Color) {
-        // self.set_color(spec.set_bg(Some(col)));
+        self.set_color(spec.set_bg(Some(col)));
     }
     fn fg(&mut self, spec: &mut ColorSpec, col: Color) {
-        // self.set_color(spec.set_fg(Some(col)));
+        self.set_color(spec.set_fg(Some(col)));
     }
     fn intense(&mut self, spec: &mut ColorSpec, intense: bool) {
-        // self.set_color(spec.set_intense(intense));
+        self.set_color(spec.set_intense(intense));
     }
     fn clear(&mut self, spec: &mut ColorSpec) {
-        // spec.set_fg(None);
-        // spec.set_bg(None);
-        // self.set_color(&ColorSpec::new());
+        spec.set_fg(None);
+        spec.set_bg(None);
+        self.set_color(&ColorSpec::new());
     }
 }
 
@@ -182,6 +182,7 @@ fn print_params(stdout: &mut StandardStream, params: &Params) {
 
     let mut spec = ColorSpec::new();
     stdout.fg(&mut spec, Blue);
+    stdout.intense(&mut spec, true);
 
     println!("{}", params.render());
 }
@@ -208,9 +209,39 @@ fn print_title(stdout: &mut StandardStream) {
     println!("{}", table.render());
 }
 
+fn adjust_size() {
 
+    use std::io::{stdout, Write};
+    use crossterm::{execute, Result, terminal::{ScrollUp, SetSize, size}};
+
+    execute!(
+        stdout(),
+        SetSize(100, 100)
+    );
+
+
+    println!("Пожалуйста, увеличьте ширину терминала...");
+    loop {
+        let dimensions = term_size::dimensions();
+        match dimensions {
+            Some((x,y)) => {
+                if x > 100 {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            },
+            None => {
+                println!("Установите размер терминала, чтобы было видно все элементы интерфейса...");
+                let mut buf = String::new();
+                let _ = stdin().read_line(&mut buf);
+            }
+        }
+    }
+}
 
 fn main() {
+    clear_screen();
+    adjust_size();
     clear_screen();
     
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
