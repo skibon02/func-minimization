@@ -55,8 +55,12 @@ impl MinimizeMethod for SteepestDescend {
         let mut f = |x1, x2| -> f64 {
             *self.hashed_vals.entry(Point(x1, x2)).or_insert_with(|| f(x1, x2))
         };
-        let epsilon = 0.0001;
+        let epsilon = 0.000001;
         let deriv = f_deriv(coord.0, coord.1);
+
+        if deriv.0.abs() <= epsilon && deriv.1.abs() <= epsilon {
+            return coord;
+        }
         
         let mut step = self.init_step;
         let final_coord = successors(Some(coord), |prev_coord| {
@@ -68,8 +72,7 @@ impl MinimizeMethod for SteepestDescend {
             let mut f2 = f(step2.0, step2.1);
             while !(f1 <= f0 && f2 <= f1) {
                 step /= 2.0;
-                if (step1.0 - step2.0).abs() < epsilon && (step1.1 - step2.1).abs() < epsilon &&
-                (prev_coord.0 - step1.0).abs() < epsilon && (prev_coord.1 - step1.1).abs() < epsilon {
+                if (f2 - f1).abs() <= epsilon && (f1 - f0).abs() <= epsilon {
                     return None;
                 }
                 
