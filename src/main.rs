@@ -23,6 +23,13 @@ use crate::minimize_methods::MinimizeMethod;
 #[derive(Debug)]
 struct F (f64);
 
+fn is_legacy() -> bool {
+    match nt_version::get() {
+        (6, _, _) => true,
+        _ => false
+    }
+}
+
 impl MinimizableFunc for F {
     fn deriv(&self, x: f64, y: f64) -> (f64, f64) {
         let dx = -4.0*x*(y-x*x) + 2.0 * self.0 * (x - 1.0);
@@ -67,12 +74,22 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, start_x: f6
             continue;
         }
 
-        let _ = execute!(
-            stdout(),
-            SetForegroundColor(Color::Blue),
-            Print(format!("{}. ", counter)),
-            ResetColor
-            );
+        if is_legacy() {
+            let _ = execute!(
+                stdout(),
+                SetForegroundColor(Color::Cyan),
+                Print(format!("{}. ", counter)),
+                ResetColor
+                );
+        }
+        else {
+            let _ = execute!(
+                stdout(),
+                SetForegroundColor(Color::Blue),
+                Print(format!("{}. ", counter)),
+                ResetColor
+                );
+        }
 
         let _ = execute!(
             stdout(),
@@ -81,27 +98,58 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, start_x: f6
             ResetColor
             );
 
-        print!("{}","  \tf = ".dark_magenta());
-
-        let _ = execute!(
-            stdout(),
-            SetForegroundColor(Color::Magenta),
-            Print(format!("{:.6}", info.f)),
-            SetForegroundColor(Color::DarkYellow),
+        if is_legacy() {
+            let _ = execute!(
+                stdout(),
+                SetForegroundColor(Color::Magenta),
             );
+            print!("  \tf = ");
+        }
+        else {
+            print!("{}","  \tf = ".dark_magenta());
+        }
 
-        print!("\t\tВычислений функции:     ");
-        print!("{}", local_f_calls.to_string().yellow());
+
+        if is_legacy() {
+            let _ = execute!(
+                stdout(),
+                SetForegroundColor(Color::Magenta),
+                Print(format!("{:.6}", info.f)),
+                SetForegroundColor(Color::Yellow),
+                );
+    
+            print!("\t\tВычислений функции:     ");
+            print!("{}", local_f_calls);
+        }
+        else {
+            let _ = execute!(
+                stdout(),
+                SetForegroundColor(Color::Magenta),
+                Print(format!("{:.6}", info.f)),
+                SetForegroundColor(Color::DarkYellow),
+                );
+    
+            print!("\t\tВычислений функции:     ");
+            print!("{}", local_f_calls.to_string().yellow());
+        }
         println!();
 
         local_f_calls = 0;
     }
     println!();
 
-    let _ = execute!(
-        stdout(),
-        SetForegroundColor(Color::Blue),
-        );
+    if is_legacy() {
+        let _ = execute!(
+            stdout(),
+            SetForegroundColor(Color::Cyan),
+            );
+    }
+    else {
+        let _ = execute!(
+            stdout(),
+            SetForegroundColor(Color::Blue),
+            );
+    }
     print!("Функция f была вычислена \t\t");
     let _ = execute!(
         stdout(),
@@ -111,10 +159,18 @@ fn run(f: &impl MinimizableFunc, algo: &mut Box<dyn MinimizeMethod>, start_x: f6
     
     println!();
 
-    let _ = execute!(
-        stdout(),
-        SetForegroundColor(Color::Blue),
-        );
+    if is_legacy() {
+        let _ = execute!(
+            stdout(),
+            SetForegroundColor(Color::Cyan),
+            );
+    }
+    else {
+        let _ = execute!(
+            stdout(),
+            SetForegroundColor(Color::Blue),
+            );
+    }
     print!("Производная функции f была вычислена \t");
     let _ = execute!(
         stdout(),
@@ -263,7 +319,7 @@ fn print_title() {
         );
 }
 
-const MIN_TERM_X: u16 = 95;
+const MIN_TERM_X: u16 = 94;
 const MIN_TERM_Y: u16 = 26;
 
 fn adjust_size() {
