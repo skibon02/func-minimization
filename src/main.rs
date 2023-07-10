@@ -319,7 +319,7 @@ fn print_title() {
         );
 }
 
-const MIN_TERM_X: u16 = 94;
+const MIN_TERM_X: u16 = 93;
 const MIN_TERM_Y: u16 = 26;
 
 fn adjust_size() {
